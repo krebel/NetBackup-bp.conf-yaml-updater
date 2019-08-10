@@ -1,0 +1,26 @@
+---
+  - hosts: nbrhelclnts
+    remote_user: root
+
+tasks:
+      - name: Backup existing bp.conf file
+        command: cp -f /usr/openv/netbackup/bp.conf /usr/openv/netbackup/bp.conf.bak
+
+      #- name: Append new entry to top of bp.conf file
+        #command: sed -i '1s/^/SERVER = nbmaster\n/' /usr/openv/netbackup/bp.conf
+
+      - name: Append new entry to bottom of bp.conf file
+        command: sed -i '$ a DB_SCRIPT_PATH = /u/home/infx/scrips/infx.sh' /usr/openv/netbackup/bp.conf
+        args:
+          warn: false # set warn=false to prevent warning
+
+      #- name: Validate changes
+        #command: head -n 1 /usr/openv/netbackup/bp.conf | grep pxrbnb01
+      - name: Validate changes
+        shell: tail -n 1 /usr/openv/netbackup/bp.conf | grep DB_SCRIPT_PATH
+        register: status
+        ignore_errors: yes
+
+      - name: revert changes if previous command fails
+        command: cp -f /usr/openv/netbackup/bp.conf.bak /usr/openv/netbackup/bp.conf
+        when: status == 1
